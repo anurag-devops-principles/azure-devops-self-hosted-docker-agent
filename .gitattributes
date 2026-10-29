@@ -1,0 +1,14 @@
+# Keep container and shell files Unix-formatted on Windows and macOS.
+# CRLF can prevent scripts from starting inside the Linux agent container.
+.gitattributes text eol=lf
+*.sh       text eol=lf
+Dockerfile text eol=lf
+compose.yaml text eol=lf
+
+# Keep repository metadata and examples consistently formatted as well.
+.env.example text eol=lf
+.gitignore   text eol=lf
+*.md         text eol=lf
+
+# PowerShell scripts use native Windows line endings when checked out there.
+*.ps1 text eol=crlf

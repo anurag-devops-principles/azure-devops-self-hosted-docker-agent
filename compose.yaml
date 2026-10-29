@@ -1,0 +1,24 @@
+services:
+  azure-devops-agent:
+    # Docker builds the correct Linux architecture for the current host.
+    build:
+      context: .
+    # AZP_IMAGE and AZP_CONTAINER_NAME are optional overrides from .env.
+    image: ${AZP_IMAGE:-azure-devops-self-hosted-agent:local}
+    container_name: ${AZP_CONTAINER_NAME:-azure-devops-agent}
+    env_file:
+      # Contains the Azure DevOps URL, PAT, pool, and unique agent name.
+      # This file is deliberately excluded from Git.
+      - .env
+    # Start the agent again after a host or Docker Desktop restart.
+    restart: unless-stopped
+    volumes:
+      # Lets Docker commands in a pipeline use this computer's Docker Desktop daemon.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Keeps checked-out pipeline workspaces between container restarts on this host.
+      - azp-work:/azp/_work
+
+volumes:
+  azp-work:
+    # Docker creates one local volume per computer; workspaces are never shared
+    # between the Windows PC and MacBook.
