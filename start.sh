@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
@@ -38,6 +37,7 @@ terraform version
 tflint --version
 docker --version
 az version
+kubectl version --client
 helm version
 git --version
 mvn -version

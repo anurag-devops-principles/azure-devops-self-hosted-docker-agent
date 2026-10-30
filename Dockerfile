@@ -7,6 +7,7 @@ FROM debian:bookworm-slim
 ARG TARGETARCH
 ARG TERRAFORM_VERSION=1.12.2
 ARG TFLINT_VERSION=0.58.0
+ARG KUBECTL_VERSION=v1.32.0
 ARG HELM_VERSION=v3.17.1
 ARG AZP_AGENT_VERSION=4.268.0
 ARG SONAR_SCANNER_VERSION=8.0.1.6346
@@ -53,7 +54,13 @@ RUN curl -fsSL https://aka.ms/InstallAzureCLIDeb \
     rm -rf /var/lib/apt/lists/* && \
     az version
 
-# 5. Helm
+# 5. kubectl
+RUN curl --retry 5 --retry-delay 2 -fsSLo /usr/local/bin/kubectl \
+      "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl" && \
+    chmod +x /usr/local/bin/kubectl && \
+    kubectl version --client
+
+# 6. Helm
 RUN curl -fsSLo /tmp/helm.tar.gz \
       "https://get.helm.sh/helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz" && \
     tar -xzf /tmp/helm.tar.gz -C /tmp && \
@@ -61,14 +68,14 @@ RUN curl -fsSLo /tmp/helm.tar.gz \
     rm -rf /tmp/helm.tar.gz "/tmp/linux-${TARGETARCH}" && \
     helm version
 
-# 6. TFLint
+# 7. TFLint
 RUN curl -fsSLo /tmp/tflint.zip \
       "https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_${TARGETARCH}.zip" && \
     unzip /tmp/tflint.zip -d /usr/local/bin && \
     rm /tmp/tflint.zip && \
     tflint --version
 
-# 7. SonarScanner CLI
+# 8. SonarScanner CLI
 RUN set -eux; \
     if [ "${TARGETARCH}" = "amd64" ]; then \
       SONAR_ARCH="x64"; \
@@ -85,7 +92,7 @@ RUN set -eux; \
     rm /tmp/sonar-scanner.zip; \
     sonar-scanner --version
 
-# 8. Azure DevOps agent
+# 9. Azure DevOps agent
 RUN set -eux; \
     case "${TARGETARCH}" in \
       amd64) AZP_ARCH="x64" ;; \
@@ -97,17 +104,14 @@ RUN set -eux; \
     tar -xzf /tmp/azp-agent.tar.gz -C /azp; \
     rm /tmp/azp-agent.tar.gz
 
-# 9. Non-root user
+# 10. Non-root user
 RUN useradd --create-home --shell /bin/bash azp && \
     chown -R azp:azp /azp
 
 COPY --chown=azp:azp start.sh /azp/start.sh
-COPY bootstrap.sh /azp/bootstrap.sh
-RUN chmod 0755 /azp/start.sh /azp/bootstrap.sh
+RUN chmod 0755 /azp/start.sh
 
-# bootstrap.sh starts as root only to map the mounted Docker socket's group,
-# then drops privileges to azp before registering or running the agent.
-USER root
+USER azp
 WORKDIR /azp
 
-ENTRYPOINT ["./bootstrap.sh"]
+ENTRYPOINT ["./start.sh"]
