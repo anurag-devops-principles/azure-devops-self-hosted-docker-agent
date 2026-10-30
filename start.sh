@@ -38,7 +38,6 @@ terraform version
 tflint --version
 docker --version
 az version
-kubectl version --client
 helm version
 git --version
 mvn -version

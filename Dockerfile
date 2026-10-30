@@ -7,7 +7,6 @@ FROM debian:bookworm-slim
 ARG TARGETARCH
 ARG TERRAFORM_VERSION=1.12.2
 ARG TFLINT_VERSION=0.58.0
-ARG KUBECTL_VERSION=v1.32.0
 ARG HELM_VERSION=v3.17.1
 ARG AZP_AGENT_VERSION=4.268.0
 ARG SONAR_SCANNER_VERSION=8.0.1.6346
@@ -54,13 +53,7 @@ RUN curl -fsSL https://aka.ms/InstallAzureCLIDeb \
     rm -rf /var/lib/apt/lists/* && \
     az version
 
-# 5. kubectl
-RUN curl --retry 5 --retry-delay 2 -fsSLo /usr/local/bin/kubectl \
-      "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl" && \
-    chmod +x /usr/local/bin/kubectl && \
-    kubectl version --client
-
-# 6. Helm
+# 5. Helm
 RUN curl -fsSLo /tmp/helm.tar.gz \
       "https://get.helm.sh/helm-${HELM_VERSION}-linux-${TARGETARCH}.tar.gz" && \
     tar -xzf /tmp/helm.tar.gz -C /tmp && \
@@ -68,14 +61,14 @@ RUN curl -fsSLo /tmp/helm.tar.gz \
     rm -rf /tmp/helm.tar.gz "/tmp/linux-${TARGETARCH}" && \
     helm version
 
-# 7. TFLint
+# 6. TFLint
 RUN curl -fsSLo /tmp/tflint.zip \
       "https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_${TARGETARCH}.zip" && \
     unzip /tmp/tflint.zip -d /usr/local/bin && \
     rm /tmp/tflint.zip && \
     tflint --version
 
-# 8. SonarScanner CLI
+# 7. SonarScanner CLI
 RUN set -eux; \
     if [ "${TARGETARCH}" = "amd64" ]; then \
       SONAR_ARCH="x64"; \
@@ -92,7 +85,7 @@ RUN set -eux; \
     rm /tmp/sonar-scanner.zip; \
     sonar-scanner --version
 
-# 9. Azure DevOps agent
+# 8. Azure DevOps agent
 RUN set -eux; \
     case "${TARGETARCH}" in \
       amd64) AZP_ARCH="x64" ;; \
@@ -104,7 +97,7 @@ RUN set -eux; \
     tar -xzf /tmp/azp-agent.tar.gz -C /azp; \
     rm /tmp/azp-agent.tar.gz
 
-# 10. Non-root user
+# 9. Non-root user
 RUN useradd --create-home --shell /bin/bash azp && \
     chown -R azp:azp /azp
 
